@@ -26,7 +26,7 @@ class ConnectionEvent:
     def from_dict(cls, data: Dict[str, Any]) -> 'ConnectionEvent':
         return cls(**data)
 
-@dataclass
+@dataclass(frozen=True)
 class Report:
     generated_at: str
     total_events: int
