@@ -1,15 +1,16 @@
 # Modular Python Honeypot System
 
-A sophisticated honeypot system written in Python that captures and analyzes network traffic to detect potential security threats. The system provides threat intelligence enrichment and AI-powered analysis capabilities.
+A sophisticated honeypot system written in Python that captures and analyzes network traffic to detect potential security threats. The system provides threat intelligence enrichment, a professional web decoy, a private analytics dashboard, and AI-powered analysis capabilities.
 
 ## Features
 
 - **Multi-Port Listening**: Simultaneously monitor multiple network ports (FTP, SSH, HTTP, etc.)
-- **Connection Logging**: Capture and store detailed connection events with timestamps
-- **Threat Intelligence**: Enrich captured data with AbuseIPDB threat intelligence
-- **AI Analysis**: Generate intelligent reports using Google's Gemini AI
-- **Modular Architecture**: Clean separation of concerns across different components
-- **Environment Configuration**: Secure API key management with `.env` files
+- **Web Decoy**: A "legit" looking corporate login page to attract and capture web-based attacks.
+- **Analytics Dashboard**: A premium, private dashboard for real-time monitoring of attack patterns.
+- **Connection Logging**: Capture and store detailed connection events, including captured credentials from the decoy.
+- **Threat Intelligence**: Enrich captured data with AbuseIPDB threat intelligence.
+- **AI Analysis**: Generate intelligent reports using Google's Gemini AI.
+- **Modular Architecture**: Clean separation of concerns across different components.
 
 ## Project Structure
 
@@ -17,24 +18,22 @@ A sophisticated honeypot system written in Python that captures and analyzes net
 Honey_Pot_project/
 ├── main.py                 # Main entry point with CLI interface
 ├── requirements.txt         # Python dependencies
-├── .gitignore              # Git ignore patterns
 ├── core/                   # Core utilities and models
-│   ├── __init__.py
 │   ├── config.py           # Configuration management
 │   ├── models.py           # Data models (ConnectionEvent, Report)
-│   └── utils.py            # Helper functions (IP validation, timestamps)
+│   └── utils.py            # Helper functions
 ├── trap/                   # Honeypot implementation
-│   ├── __init__.py
-│   └── honeypot.py         # Main honeypot server logic
+│   └── honeypot.py         # Main socket server logic
+├── web/                    # Web-based honeypot features
+│   ├── server.py           # Flask server for Decoy and Dashboard
+│   └── templates/          # HTML templates (Decoy & Dashboard)
 ├── analysis/               # Log analysis and reporting
-│   ├── __init__.py
-│   └── analyzer.py         # Log analysis and report generation
+│   └── analyzer.py         # Log analysis logic
 ├── intel/                  # Threat intelligence integration
-│   ├── __init__.py
 │   ├── enricher.py         # AbuseIPDB integration
 │   └── ai_analyst.py       # Gemini AI analysis
-└── logs/                   # Generated logs (created automatically)
-    └── reports/            # Generated reports (created automatically)
+├── logs/                   # Captured traffic logs (JSON)
+└── reports/                # Generated text and AI reports
 ```
 
 ## Installation
@@ -46,112 +45,51 @@ Honey_Pot_project/
    ```
 
 3. **Configure environment variables**:
-   Create a `.env` file in the project root with:
+   Create a `.env` file in the project root:
    ```env
-   ABUSEIPDB_API_KEY=your_abuseipdb_api_key_here
-   GEMINI_API_KEY=your_gemini_api_key_here
+   ABUSEIPDB_API_KEY=your_key
+   GEMINI_API_KEY=your_key
    HONEYPOT_PORTS=21,22,80,8080
    LOG_PATH=logs/traffic.json
-   REPORT_PATH=reports/report.txt
-   AI_REPORT_PATH=reports/ai_report.txt
    ```
 
 ## Usage
 
 The honeypot provides several command-line options:
 
-### Start the Honeypot Server
+### 1. Start the Full System (Web + Sockets)
 ```bash
-python main.py --start
+python main.py --start --web
 ```
-Starts listening on configured ports and captures incoming connections.
+This starts:
+- **Socket Listener**: Monitors ports like 21 (FTP) and 22 (SSH).
+- **Web Decoy**: A fake login portal at `http://localhost:8080`.
+- **Private Dashboard**: Accessible only at `http://localhost:5000`.
 
-### Analyze Captured Logs
+### 2. Start Only Web Services
 ```bash
-python main.py --analyze
+python main.py --web
 ```
-Processes logged events and generates a detailed analysis report.
 
-### Enrich Logs with Threat Intelligence
+### 3. Analyze and Enrich Logs
 ```bash
-python main.py --enrich
-```
-Queries AbuseIPDB for IP reputation data and enriches the logs.
-
-### Generate AI Analysis
-```bash
-python main.py --ai
-```
-Uses Google's Gemini AI to analyze the threat patterns and provide intelligent insights.
-
-### Show Help
-```bash
-python main.py
-```
-Displays all available options.
-
-## Configuration
-
-### Ports
-Configure which ports to monitor in your `.env` file:
-```
-HONEYPOT_PORTS=21,22,80,443,8080
+python main.py --enrich   # Add threat intel
+python main.py --analyze  # Generate basic report
+python main.py --ai       # Generate AI-powered insights
 ```
 
-### File Paths
-Customize log and report locations:
-```
-LOG_PATH=logs/traffic.json
-REPORT_PATH=reports/report.txt
-AI_REPORT_PATH=reports/ai_report.txt
-```
+## Accessing the Dashboard
 
-## API Keys
-
-### AbuseIPDB
-1. Sign up at [AbuseIPDB](https://www.abuseipdb.com/)
-2. Get your API key from the account settings
-3. Add it to your `.env` file as `ABUSEIPDB_API_KEY`
-
-### Google Gemini
-1. Visit [Google AI Studio](https://aistudio.google.com/)
-2. Create an API key
-3. Add it to your `.env` file as `GEMINI_API_KEY`
-
-## How It Works
-
-1. **Honeypot Server**: Listens on multiple ports using multithreading
-2. **Connection Handling**: Captures incoming connections and logs metadata
-3. **Fake Responses**: Sends appropriate responses based on port (FTP banner, HTTP response, etc.)
-4. **Log Storage**: Saves events to JSON format with timestamps and connection details
-5. **Analysis**: Processes logs to identify patterns, top attackers, and targeted ports
-6. **Threat Enrichment**: Queries external APIs for IP reputation and threat scores
-7. **AI Analysis**: Uses machine learning to provide contextual threat analysis
+The analytics dashboard is designed for **your eyes only**. 
+- It binds to `127.0.0.1` and blocks external IP addresses by default.
+- Access it locally at: **`http://localhost:5000`**
 
 ## Security Considerations
 
-- **Port Access**: Ensure the honeypot only listens on ports you intend to monitor
-- **API Keys**: Keep API keys secure and never commit them to version control
-- **Network Isolation**: Consider running in an isolated network environment
-- **Logging**: Monitor log files for sensitive data exposure
-- **Permissions**: Run with appropriate system permissions for port binding
-
-## Contributing
-
-1. Follow the modular architecture when adding new features
-2. Add appropriate logging for debugging and monitoring
-3. Update documentation for any new configuration options
-4. Test thoroughly in isolated environments
+- **Isolation**: Always run the honeypot in a controlled or isolated environment.
+- **Dashboard Privacy**: The dashboard is restricted to local access by default to prevent attackers from seeing your logs.
+- **Decoy Realism**: The web decoy is hosted on port 8080 by default. For a more "legit" look, you can map port 80 to 8080 using `iptables` or run as root (not recommended for research).
 
 ## License
 
-This project is provided as-is for educational and security research purposes. Please ensure compliance with applicable laws and regulations when deploying honeypots.
-
-## Educational Resources
-
-For a comprehensive guide to the Python concepts used in this project, see `python_curriculum_explanations.md` which covers:
-- Python fundamentals (variables, data types, operators)
-- Control flow and functions
-- Object-oriented programming
-- File operations and multithreading
-- Real-world examples from this honeypot codebase
+This project is provided for educational and security research purposes. Deployment should comply with local laws and regulations.

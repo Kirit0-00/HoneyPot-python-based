@@ -10,9 +10,9 @@ def validate_ip(ip: str) -> bool:
     except ValueError:
         return False
 
-def get_timestamp() -> datetime:
-    """Returns the current timestamp as a datetime object."""
-    return datetime.datetime.now(datetime.timezone.utc)
+def get_timestamp() -> str:
+    """Returns the current timestamp as an ISO formatted string."""
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 def ensure_directory_exists(filepath: str) -> None:
     """Ensures the directory for the given filepath exists."""

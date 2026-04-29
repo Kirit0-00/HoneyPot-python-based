@@ -13,6 +13,7 @@ class HoneypotServer:
         self.ports = ports or Config.HONEYPOT_PORTS
         self.log_path = Config.LOG_PATH
         self.threads = []
+        self.interface = Config.INTERFACE_IP
         self.running = False
         ensure_directory_exists(self.log_path)
 
@@ -20,7 +21,7 @@ class HoneypotServer:
         self.running = True
         logger.info(f"Starting honeypot on ports: {self.ports}")
         for port in self.ports:
-            t = threading.Thread(target=self._listen, args=(port,), daemon=True)
+            t = threading.Thread(target=self._listen, args=(self.interface,port,), daemon=True)
             self.threads.append(t)
             t.start()
             
@@ -35,13 +36,13 @@ class HoneypotServer:
     def stop(self):
         self.running = False
 
-    def _listen(self, port):
+    def _listen(self,interface,port):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                s.bind(('0.0.0.0', port))
+                s.bind((interface, port))
                 s.listen(5)
-                logger.info(f"Listening on port {port}")
+                logger.info(f"Listening on interface {interface} port {port}...")
                 
                 s.settimeout(1.0) # Check self.running periodically
                 while self.running:

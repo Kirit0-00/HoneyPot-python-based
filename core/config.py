@@ -20,3 +20,5 @@ class Config:
     LOG_PATH = os.getenv("LOG_PATH", "logs/traffic.json")
     REPORT_PATH = os.getenv("REPORT_PATH", "reports/report.txt")
     AI_REPORT_PATH = os.getenv("AI_REPORT_PATH", "reports/ai_report.txt")
+    INTERFACE_IP = os.getenv("INTERFACE_IP", "127.0.0.1")
+

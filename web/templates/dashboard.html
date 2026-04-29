@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoneyPot Dashboard | Security Operations</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid #334155;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid #334155;
+            height: 100%;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        td {
+            padding: 1rem 0;
+            border-bottom: 1px solid #334155;
+            font-size: 0.875rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-port { background: rgba(56, 189, 248, 0.1); color: var(--primary); }
+        .badge-ip { background: rgba(129, 140, 248, 0.1); color: var(--secondary); }
+        .badge-geo { background: rgba(34, 197, 94, 0.1); color: var(--success); }
+
+        .data-cell {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-muted);
+        }
+
+        .refresh-btn {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: var(--primary);
+            color: var(--bg);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="header">
+        <h1>HoneyPot Analytics Engine</h1>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <span id="live-indicator" style="color: var(--success); font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                <span style="width: 8px; height: 8px; background: var(--success); border-radius: 50%; display: inline-block;"></span>
+                LIVE MONITORING
+            </span>
+            <button class="refresh-btn" onclick="window.location.reload()">Refresh Data</button>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Hits</div>
+            <div class="stat-value">{{ stats.total_events }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Unique Attackers</div>
+            <div class="stat-value">{{ stats.unique_ips }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Primary Target</div>
+            <div class="stat-value">Port {{ stats.top_port }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">System Status</div>
+            <div class="stat-value" style="color: var(--success);">ACTIVE</div>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="card">
+            <h2>Target Distribution</h2>
+            <div class="chart-container">
+                <canvas id="portChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h2>Threat Intensity</h2>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-grid">
+        <div class="card">
+            <h2>Recent Activity Feed</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Source IP</th>
+                        <th>Location</th>
+                        <th>Port</th>
+                        <th>Payload</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events|reverse %}
+                    {% if loop.index <= 25 %}
+                    <tr>
+                        <td>{{ event.timestamp.split(' ')[1] }}</td>
+                        <td><span class="badge badge-ip">{{ event.ip }}</span></td>
+                        <td><span class="badge badge-geo">{{ event.geo.city }}, {{ event.geo.country }}</span></td>
+                        <td><span class="badge badge-port">{{ event.port }}</span></td>
+                        <td><div class="data-cell" title="{{ event.data }}">{{ event.data }}</div></td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="card">
+            <h2>Top Threat Sources</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>IP Address / Region</th>
+                        <th>Intensity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ip, data in stats.top_attackers.items() %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600;">{{ ip }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ data.info.city }}, {{ data.info.country }}</div>
+                        </td>
+                        <td>
+                            <div style="font-size: 1.125rem; font-weight: 700; color: var(--primary);">{{ data.count }}</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Data from Flask
+        const portData = {{ stats.port_counts|tojson }};
+        
+        // Port Distribution Chart
+        const ctxPort = document.getElementById('portChart').getContext('2d');
+        new Chart(ctxPort, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(portData).map(p => 'Port ' + p),
+                datasets: [{
+                    data: Object.values(portData),
+                    backgroundColor: ['#38bdf8', '#818cf8', '#22c55e', '#f59e0b', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { color: '#94a3b8', font: { family: 'Outfit' } }
+                    }
+                }
+            }
+        });
+
+        // Trend Chart (Simulated for visualization)
+        const ctxTrend = document.getElementById('trendChart').getContext('2d');
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: ['12am', '4am', '8am', '12pm', '4pm', '8pm', '11pm'],
+                datasets: [{
+                    label: 'Attacks per Hour',
+                    data: [12, 19, 3, 5, 2, 3, 9],
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        // Auto-refresh every 30 seconds
+        setTimeout(() => {
+            window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>
